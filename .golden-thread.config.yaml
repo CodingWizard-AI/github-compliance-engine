@@ -28,9 +28,11 @@ notion:
 services:
   discovery:
     strategy: manifest
-    manifest_filename: .golden-thread.yaml
+    manifest_filename: .golden-thread/manifest.yaml
     root_directories:
-      - services/
+      - frontend/
+      - backend/
+      - graph-db/
 parsers:
   python:
     enabled: true

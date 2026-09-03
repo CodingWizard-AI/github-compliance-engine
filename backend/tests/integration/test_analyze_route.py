@@ -26,3 +26,25 @@ def test_analyze_rejects_invalid_repo_url() -> None:
     response = client.post("/api/analyze", json={"repo_url": "not-a-url"})
 
     assert response.status_code == 422
+
+
+def test_analyze_rejects_non_github_repo_url() -> None:
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/analyze",
+        json={"repo_url": "https://example.com/octocat/Hello-World"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_analyze_rejects_missing_repo_path() -> None:
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/analyze",
+        json={"repo_url": "https://github.com/octocat"},
+    )
+
+    assert response.status_code == 422

@@ -31,7 +31,9 @@ Do not commit real database credentials.
 
 ## Apply Init Scripts
 
-Start the Neo4j service:
+The root Compose stack runs a one-shot `neo4j-init` service that applies `constraints.cypher` and `indexes.cypher` after Neo4j accepts Bolt connections.
+
+To apply the scripts manually instead, start the Neo4j service:
 
 ```sh
 docker compose up neo4j

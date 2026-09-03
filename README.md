@@ -60,6 +60,8 @@ NEO4J_BOLT_PORT=7687
 
 Do not commit `.env`; it is ignored by git.
 
+`NEO4J_PASSWORD` is required by Compose and the backend runtime. The placeholder belongs only in `.env.example`; set a local value in `.env` before running Docker commands.
+
 ### Validate Compose
 
 Check that the Compose file is structurally valid:
@@ -107,6 +109,12 @@ curl -s -X POST http://localhost:8000/api/analyze \
 ```
 
 Expected Golden Thread coverage for this scaffold is `FEAT-SCAFFOLD-001`, `TC-ING-001`, `TC-OBJ-001`, `TC-CORE-001`, `V-ING-001`, `V-OBJ-001`, and `V-CORE-001`.
+
+Neo4j constraints and indexes are applied by the one-shot `neo4j-init` Compose service after Neo4j accepts Bolt connections.
+
+### License review
+
+Trivy may report LGPL-family license findings for indirect Next.js `sharp` optional platform packages in `frontend/package-lock.json`. This scaffold accepts those findings for the open-source repository; dependency replacement or scanner policy changes belong to release hardening.
 
 Stop containers with:
 

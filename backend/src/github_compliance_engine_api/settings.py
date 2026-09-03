@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     backend_cors_origins: str = Field(default="http://localhost:3000", alias="BACKEND_CORS_ORIGINS")
     neo4j_uri: str = Field(default="bolt://neo4j:7687", alias="NEO4J_URI")
     neo4j_user: str = Field(default="neo4j", alias="NEO4J_USER")
-    neo4j_password: str = Field(default="local-dev-password", alias="NEO4J_PASSWORD")
+    neo4j_password: str = Field(alias="NEO4J_PASSWORD")
 
     @property
     def cors_origins(self) -> list[str]:
