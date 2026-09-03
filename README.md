@@ -67,6 +67,10 @@ Check that the Compose file is structurally valid:
 ```sh
 docker compose config
 ```
+### Build Command
+```sh
+docker compose build
+```
 
 ### Start the stack
 
