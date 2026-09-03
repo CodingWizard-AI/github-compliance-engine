@@ -1,0 +1,33 @@
+version: "1.0"
+service:
+  name: Python Analysis Backend
+  path: backend/
+  feature: FEAT-SCAFFOLD-001
+traceability:
+  business_requirements:
+    - BR-CORE-001
+  functional_requirements:
+    - FR-ING-001
+    - FR-OBJ-001
+  rest_endpoints:
+    - REST-ANALYZE-001
+    - REST-RESULTS-001
+  test_cases:
+    - TC-ING-001
+    - TC-OBJ-001
+  verifications:
+    - V-ING-001
+    - V-OBJ-001
+files:
+  src/github_compliance_engine_api/api/routes.py:
+    implements:
+      - REST-ANALYZE-001
+      - REST-RESULTS-001
+  tests/integration/test_analyze_route.py:
+    verifies:
+      - TC-ING-001
+      - V-ING-001
+  tests/contracts/test_objective_mapping_contract.py:
+    verifies:
+      - TC-OBJ-001
+      - V-OBJ-001

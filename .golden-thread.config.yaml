@@ -1,0 +1,53 @@
+notion:
+  api_token: ${NOTION_API_TOKEN}
+  database_id: ${NOTION_API_DATABASE_ID}
+  version:
+  timeout: 30
+  cache:
+    enabled: true
+    ttl: 3600
+    directory: .golden-thread-cache
+  databases:
+    BR: 49a94bf8-d508-8245-8003-011237bcc220
+    UR: 7c494bf8-d508-82a9-b052-81082a95ca3f
+    FR: c1294bf8-d508-8238-ac98-81e7f433a2c1
+    TSR: b2f94bf8-d508-8313-8d2d-019b04ee5734
+    NFR: 14f94bf8-d508-8319-bdb3-814b98b9309e
+    TCR: 7fa94bf8-d508-838c-b8e0-8123efa13f9c
+    FEAT: e3c94bf8-d508-8264-bc9d-81a9ee014a16
+    IF: e1d94bf8-d508-8393-a520-81280aea811a
+    RPC:
+    GQL:
+    DB: 3cf94bf8-d508-8035-8409-d9b764e3fddf
+    CF: f1b94bf8-d508-83cf-a592-8173ad7791ee
+    TC: 93694bf8-d508-8294-ae22-81e8be266e47
+    V: e8e94bf8-d508-834c-8104-019a31391058
+    EA: 60794bf8-d508-82d1-9471-01955334352a
+    REST: aed94bf8-d508-836f-bb09-01af55b2c928
+    SERVICES: d9d94bf8-d508-827c-ae6f-81c297afc79e
+services:
+  discovery:
+    strategy: manifest
+    manifest_filename: .golden-thread.yaml
+    root_directories:
+      - services/
+parsers:
+  python:
+    enabled: true
+  typescript:
+    enabled: true
+validation:
+  strict_mode: false
+  ignore_patterns:
+    - "**/*_test.go"
+    - "**/mock_*.go"
+  required_ids:
+    - BR
+    - UR
+    - FEAT
+    - FR
+reports:
+  output_directory: .golden-thread-reports
+  formats:
+    - json
+    - html

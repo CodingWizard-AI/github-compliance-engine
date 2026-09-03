@@ -4,7 +4,7 @@
 
 GitHub Compliance Engine is a POC for analyzing public GitHub repositories and producing a Golden Thread traceability report. The system accepts a public repository URL, runs a Python analysis pipeline, builds a lexical graph in Neo4j, maps externally-facing interfaces to inferred business objectives, flags orphaned code paths, and returns a reviewable alignment score and report.
 
-The first scaffolded slice is traced to `FEAT-SCAFFOLD-001`, `BR-CORE-001`, `UR-USER-001`, `UR-USER-002`, `FR-ING-001`, `FR-OBJ-001`, `TC-ING-001`, `TC-OBJ-001`, `TC-CORE-001`, `V-ING-001`, `V-OBJ-001`, and `V-CORE-001`.
+
 
 ## Architecture
 
