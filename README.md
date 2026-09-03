@@ -64,11 +64,39 @@ docker compose config
 
 ### Start the stack
 
-After the `frontend/` and `backend/` scaffold commits are implemented, build and start the stack:
+Build and start the complete scaffold stack:
 
 ```sh
 docker compose up --build
 ```
+
+The frontend calls the backend through `http://localhost:8000`, matching the browser-visible API port. Neo4j uses the Compose network address `bolt://neo4j:7687` from the backend container and exposes Bolt locally at `bolt://localhost:7687`.
+
+### Smoke test the acceptance path
+
+With the stack running, open the frontend:
+
+```sh
+open http://localhost:3000
+```
+
+Submit:
+
+```text
+https://github.com/octocat/Hello-World
+```
+
+The scaffold should show an accepted analysis ID, placeholder graph nodes and edges, objective mappings, orphaned code units, and a traceability score.
+
+You can also call the backend directly:
+
+```sh
+curl -s -X POST http://localhost:8000/api/analyze \
+  -H 'Content-Type: application/json' \
+  -d '{"repo_url":"https://github.com/octocat/Hello-World"}'
+```
+
+Expected Golden Thread coverage for this scaffold is `FEAT-SCAFFOLD-001`, `TC-ING-001`, `TC-OBJ-001`, `TC-CORE-001`, `V-ING-001`, `V-OBJ-001`, and `V-CORE-001`.
 
 Stop containers with:
 

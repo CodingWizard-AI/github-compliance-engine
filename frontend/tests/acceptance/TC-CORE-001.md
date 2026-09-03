@@ -1,6 +1,6 @@
 # TC-CORE-001 Acceptance Placeholder
 
-<!-- @golden-thread FEAT-SCAFFOLD-001, BR-CORE-001, UR-USER-001, UR-USER-002, TC-CORE-001, V-CORE-001 -->
+<!-- @golden-thread FEAT-SCAFFOLD-001, BR-CORE-001, UR-USER-001, UR-USER-002, TC-ING-001, TC-OBJ-001, TC-CORE-001, V-ING-001, V-OBJ-001, V-CORE-001 -->
 
 ## Scenario
 

@@ -5,6 +5,8 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        NEXT_PUBLIC_BACKEND_BASE_URL: ${NEXT_PUBLIC_BACKEND_BASE_URL:-http://localhost:8000}
     ports:
       - "3000:3000"
     environment:
@@ -34,6 +36,7 @@ services:
       NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-local-dev-password}
     volumes:
       - neo4j-data:/data
+      - ./graph-db/conf/neo4j.conf:/conf/neo4j.conf:ro
 
 volumes:
   neo4j-data:
