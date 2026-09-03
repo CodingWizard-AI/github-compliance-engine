@@ -16,6 +16,8 @@ Next.js App Router scaffold for submitting GitHub repository URLs and rendering 
 
 ```sh
 NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:8000
+FRONTEND_HOSTNAME=0.0.0.0
+FRONTEND_PORT=3000
 ```
 
 ## Local Development

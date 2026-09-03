@@ -15,6 +15,8 @@ FastAPI scaffold for the GitHub Compliance Engine analysis service.
 
 ```sh
 BACKEND_CORS_ORIGINS=http://localhost:3000
+BACKEND_HOST=0.0.0.0
+BACKEND_PORT=8000
 NEO4J_URI=bolt://neo4j:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=local-dev-password

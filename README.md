@@ -46,10 +46,16 @@ The example file uses local-only placeholders:
 
 ```sh
 NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:8000
+FRONTEND_HOSTNAME=0.0.0.0
+FRONTEND_PORT=3000
+BACKEND_HOST=0.0.0.0
+BACKEND_PORT=8000
 BACKEND_CORS_ORIGINS=http://localhost:3000
 NEO4J_URI=bolt://neo4j:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=local-dev-password
+NEO4J_HTTP_PORT=7474
+NEO4J_BOLT_PORT=7687
 ```
 
 Do not commit `.env`; it is ignored by git.

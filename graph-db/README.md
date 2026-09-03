@@ -23,6 +23,8 @@ The root Compose file supplies these values:
 NEO4J_URI=bolt://neo4j:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=local-dev-password
+NEO4J_HTTP_PORT=7474
+NEO4J_BOLT_PORT=7687
 ```
 
 Do not commit real database credentials.
