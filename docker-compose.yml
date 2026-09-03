@@ -1,0 +1,39 @@
+# @golden-thread FEAT-SCAFFOLD-001, BR-CORE-001, TC-CORE-001, V-CORE-001
+name: github-compliance-engine
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_BACKEND_BASE_URL: ${NEXT_PUBLIC_BACKEND_BASE_URL:-http://localhost:8000}
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000}
+      NEO4J_URI: ${NEO4J_URI:-bolt://neo4j:7687}
+      NEO4J_USER: ${NEO4J_USER:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-local-dev-password}
+    depends_on:
+      - neo4j
+
+  neo4j:
+    image: neo4j:5-community
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-local-dev-password}
+    volumes:
+      - neo4j-data:/data
+
+volumes:
+  neo4j-data:
