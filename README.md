@@ -56,6 +56,9 @@ NEO4J_USER=neo4j
 NEO4J_PASSWORD=local-dev-password
 NEO4J_HTTP_PORT=7474
 NEO4J_BOLT_PORT=7687
+INGESTION_WORKSPACE_ROOT=/tmp/github-compliance-engine/analyses
+INGESTION_CLONE_DEPTH=1
+INGESTION_CLONE_TIMEOUT_SECONDS=60
 ```
 
 Do not commit `.env`; it is ignored by git.
@@ -76,6 +79,9 @@ export NEO4J_USER=neo4j
 export NEO4J_PASSWORD=local-dev-password
 export NEO4J_HTTP_PORT=7474
 export NEO4J_BOLT_PORT=7687
+export INGESTION_WORKSPACE_ROOT=/tmp/github-compliance-engine/analyses
+export INGESTION_CLONE_DEPTH=1
+export INGESTION_CLONE_TIMEOUT_SECONDS=60
 ```
 
 ### Validate Compose
@@ -134,6 +140,8 @@ docker compose up --build
 
 The frontend calls the backend through `http://localhost:8000`, matching the browser-visible API port. Neo4j uses the Compose network address `bolt://neo4j:7687` from the backend container and exposes Bolt locally at `bolt://localhost:7687`.
 
+`POST /api/analyze` now validates the submitted URL and performs a real shallow clone of the public GitHub repository into `INGESTION_WORKSPACE_ROOT`. Clone depth and timeout are controlled by `INGESTION_CLONE_DEPTH` and `INGESTION_CLONE_TIMEOUT_SECONDS`.
+
 ### Smoke test the acceptance path
 
 With the stack running, open the frontend:
@@ -148,7 +156,7 @@ Submit:
 https://github.com/octocat/Hello-World
 ```
 
-The scaffold should show an accepted analysis ID, placeholder graph nodes and edges, objective mappings, orphaned code units, and a traceability score.
+The scaffold should show an accepted analysis ID after the backend completes the shallow clone. The results route still returns placeholder graph nodes and edges, objective mappings, orphaned code units, and a traceability score.
 
 You can also call the backend directly:
 
@@ -159,6 +167,16 @@ curl -s -X POST http://localhost:8000/api/analyze \
 ```
 
 Expected Golden Thread coverage for this scaffold is `FEAT-SCAFFOLD-001`, `TC-ING-001`, `TC-OBJ-001`, `TC-CORE-001`, `V-ING-001`, `V-OBJ-001`, and `V-CORE-001`.
+
+Expected ingestion PR coverage is `FEAT-ING-001`, `BR-CORE-001`, `UR-USER-001`, `FR-ING-001`, `REST-ANALYZE-001`, `CF-ANALYZE-INGEST-001`, `TC-ING-001`, and `V-ING-001`.
+
+PR acceptance checks:
+
+- `cd backend && .venv/bin/python -m pytest`
+- `cd frontend && npm run lint`
+- `cd frontend && npm run build`
+- `docker compose config`
+- Secret scan confirms `.env`, cloned repositories, Notion tokens, GitHub tokens, real Notion database IDs, and raw credentials are not committed.
 
 Neo4j constraints and indexes are applied by the one-shot `neo4j-init` Compose service after Neo4j accepts Bolt connections.
 

@@ -4,6 +4,7 @@ export interface AnalyzeResponse {
   analysis_id: string;
   status: "accepted";
   repo_url: string;
+  clone_status: "cloned";
 }
 
 export interface GraphNode {
