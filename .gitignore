@@ -241,3 +241,4 @@ yarn-error.log*
 pnpm-debug.log*
 !frontend/lib/
 !frontend/lib/**
+frontend/package-lock.json

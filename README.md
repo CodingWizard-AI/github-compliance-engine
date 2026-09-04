@@ -62,6 +62,22 @@ Do not commit `.env`; it is ignored by git.
 
 `NEO4J_PASSWORD` is required by Compose and the backend runtime. The placeholder belongs only in `.env.example`; set a local value in `.env` before running Docker commands.
 
+For one-off Docker commands, export the full local configuration in the same terminal before building or starting services:
+
+```sh
+export NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:8000
+export FRONTEND_HOSTNAME=0.0.0.0
+export FRONTEND_PORT=3000
+export BACKEND_HOST=0.0.0.0
+export BACKEND_PORT=8000
+export BACKEND_CORS_ORIGINS=http://localhost:3000
+export NEO4J_URI=bolt://neo4j:7687
+export NEO4J_USER=neo4j
+export NEO4J_PASSWORD=local-dev-password
+export NEO4J_HTTP_PORT=7474
+export NEO4J_BOLT_PORT=7687
+```
+
 ### Validate Compose
 
 Check that the Compose file is structurally valid:
@@ -72,6 +88,40 @@ docker compose config
 ### Build Command
 ```sh
 docker compose build
+```
+
+### Graph Store Commands
+
+Run these from the repository root after exporting the configuration variables above in the same terminal.
+
+Validate the Compose graph-store configuration:
+
+```sh
+docker compose config
+```
+
+Start Neo4j and apply graph constraints/indexes through the one-shot init service:
+
+```sh
+docker compose up --build -d neo4j neo4j-init
+```
+
+Verify the required graph constraints:
+
+```sh
+docker compose exec -T neo4j /var/lib/neo4j/bin/cypher-shell \
+  -u "$NEO4J_USER" \
+  -p "$NEO4J_PASSWORD" \
+  "SHOW CONSTRAINTS YIELD name RETURN collect(name) AS constraints;"
+```
+
+Verify the required full-text and vector indexes:
+
+```sh
+docker compose exec -T neo4j /var/lib/neo4j/bin/cypher-shell \
+  -u "$NEO4J_USER" \
+  -p "$NEO4J_PASSWORD" \
+  "SHOW INDEXES YIELD name, type RETURN name, type ORDER BY name;"
 ```
 
 ### Start the stack
