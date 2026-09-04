@@ -59,6 +59,44 @@ def test_clone_repository_creates_isolated_workspace_and_returns_result(tmp_path
     assert result.commit_sha == "def456"
 
 
+def test_clone_repository_cleans_pre_existing_clone_target(tmp_path: Path, monkeypatch) -> None:
+    workspace_path = tmp_path / "analysis-001"
+    clone_path = workspace_path / "repo"
+    clone_path.mkdir(parents=True)
+    (clone_path / "stale.txt").write_text("stale clone", encoding="utf-8")
+    clone_from = Mock(return_value=git_repo())
+    monkeypatch.setattr("github_compliance_engine_api.ingestion.clone.Repo.clone_from", clone_from)
+
+    result = clone_repository(clone_request(tmp_path))
+
+    assert not (clone_path / "stale.txt").exists()
+    assert result.local_clone_path == clone_path
+    clone_from.assert_called_once_with(
+        "https://github.com/octocat/Hello-World",
+        clone_path,
+        depth=1,
+        single_branch=True,
+        kill_after_timeout=60,
+    )
+
+
+def test_clone_repository_maps_pre_existing_cleanup_failure(tmp_path: Path, monkeypatch) -> None:
+    clone_path = tmp_path / "analysis-001" / "repo"
+    clone_path.mkdir(parents=True)
+    clone_from = Mock()
+    monkeypatch.setattr("github_compliance_engine_api.ingestion.clone.Repo.clone_from", clone_from)
+    monkeypatch.setattr(
+        "github_compliance_engine_api.ingestion.clone.cleanup_analysis_workspace",
+        Mock(side_effect=OSError("raw cleanup failure")),
+    )
+
+    with pytest.raises(WorkspaceError) as exc_info:
+        clone_repository(clone_request(tmp_path))
+
+    assert exc_info.value.safe_message == "Analysis workspace could not be prepared."
+    clone_from.assert_not_called()
+
+
 def test_clone_repository_maps_git_errors_to_safe_exception(tmp_path: Path, monkeypatch) -> None:
     clone_from = Mock(side_effect=GitCommandError("clone", "fatal: token TOKEN_REDACTED leaked"))
     monkeypatch.setattr("github_compliance_engine_api.ingestion.clone.Repo.clone_from", clone_from)

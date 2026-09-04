@@ -23,7 +23,7 @@ CLONE_TIMEOUT_MESSAGE = "Repository clone timed out. Try again later or use a sm
 # @golden-thread FEAT-ING-001, FR-ING-001, CF-ANALYZE-INGEST-001, TC-ING-001, V-ING-001
 def clone_repository(request: CloneRequest) -> CloneResult:
     workspace_path = ensure_analysis_workspace(request.workspace_root, request.analysis_id)
-    clone_path = workspace_path / "repo"
+    clone_path = _prepare_clone_path(workspace_path, request)
 
     try:
         repo = Repo.clone_from(
@@ -54,6 +54,22 @@ def clone_repository(request: CloneRequest) -> CloneResult:
         clone_status="cloned",
         commit_sha=_commit_sha(repo),
     )
+
+
+def _prepare_clone_path(workspace_path: Path, request: CloneRequest) -> Path:
+    clone_path = workspace_path / "repo"
+    if not clone_path.exists():
+        return clone_path
+
+    try:
+        cleanup_analysis_workspace(workspace_path)
+        workspace_path = ensure_analysis_workspace(request.workspace_root, request.analysis_id)
+    except WorkspaceError:
+        raise
+    except OSError as exc:
+        raise WorkspaceError("Analysis workspace could not be prepared.") from exc
+
+    return workspace_path / "repo"
 
 
 def _is_timeout_error(exc: GitCommandError) -> bool:
