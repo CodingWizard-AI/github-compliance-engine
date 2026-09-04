@@ -4,7 +4,7 @@
 
 GitHub Compliance Engine is a POC for analyzing public GitHub repositories and producing a Golden Thread traceability report. The system accepts a public repository URL, runs a Python analysis pipeline, builds a lexical graph in Neo4j, maps externally-facing interfaces to inferred business objectives, flags orphaned code paths, and returns a reviewable alignment score and report.
 
-
+See the public Notion page for the [GitHub Compliance Engine Golden Thread reference](https://codingwizard-ai.notion.site/GitHub-Compliance-Engine-Code-to-Business-Alignment-Agentic-Workflow-Application-Golden-Thread-R-3cc94bf8d508810cac92dcb00c7816a4) to view how the Golden Thread Framework is used in action.
 
 ## Architecture
 
