@@ -13,10 +13,15 @@ def analysis_workspace_path(workspace_root: Path, analysis_id: str) -> Path:
     if not analysis_id or not ANALYSIS_ID_PATTERN.fullmatch(analysis_id):
         raise WorkspaceError("Analysis workspace ID is invalid.")
 
-    workspace_root = workspace_root.expanduser().resolve()
-    workspace_path = (workspace_root / analysis_id).resolve()
-    if workspace_root != workspace_path and workspace_root not in workspace_path.parents:
-        raise WorkspaceError("Analysis workspace must be under the configured workspace root.")
+    try:
+        workspace_root = workspace_root.expanduser().resolve()
+        workspace_path = (workspace_root / analysis_id).resolve()
+        if workspace_root != workspace_path and workspace_root not in workspace_path.parents:
+            raise WorkspaceError("Analysis workspace must be under the configured workspace root.")
+    except WorkspaceError:
+        raise
+    except OSError as exc:
+        raise WorkspaceError("Analysis workspace could not be resolved.") from exc
 
     return workspace_path
 
@@ -31,5 +36,8 @@ def ensure_analysis_workspace(workspace_root: Path, analysis_id: str) -> Path:
 
 
 def cleanup_analysis_workspace(workspace_path: Path) -> None:
-    if workspace_path.exists():
-        shutil.rmtree(workspace_path)
+    try:
+        if workspace_path.exists():
+            shutil.rmtree(workspace_path)
+    except OSError as exc:
+        raise WorkspaceError("Analysis workspace could not be cleaned up.") from exc

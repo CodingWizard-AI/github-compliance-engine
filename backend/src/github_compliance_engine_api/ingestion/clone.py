@@ -1,6 +1,8 @@
+import os
+import subprocess
 from pathlib import Path
 
-from git import GitCommandError, Repo
+from git import Repo
 from git.exc import GitError
 
 from github_compliance_engine_api.github_urls import canonical_github_repo_url
@@ -28,19 +30,15 @@ def clone_repository(request: CloneRequest) -> CloneResult:
     repo_url = canonical_github_repo_url(request.repo_url)
 
     try:
-        repo = Repo.clone_from(
-            repo_url,
-            clone_path,
-            depth=request.clone_depth,
-            single_branch=True,
-            kill_after_timeout=request.clone_timeout_seconds,
-        )
+        _run_git_clone(repo_url, clone_path, request)
+        repo = Repo(clone_path)
     except WorkspaceError:
         raise
-    except GitCommandError as exc:
+    except subprocess.TimeoutExpired as exc:
         _cleanup_workspace_or_raise(workspace_path)
-        if _is_timeout_error(exc):
-            raise CloneTimeoutError(CLONE_TIMEOUT_MESSAGE) from exc
+        raise CloneTimeoutError(CLONE_TIMEOUT_MESSAGE) from exc
+    except subprocess.CalledProcessError as exc:
+        _cleanup_workspace_or_raise(workspace_path)
         raise RepositoryUnavailableError(REPOSITORY_UNAVAILABLE_MESSAGE) from exc
     except GitError as exc:
         _cleanup_workspace_or_raise(workspace_path)
@@ -60,8 +58,11 @@ def clone_repository(request: CloneRequest) -> CloneResult:
 
 def _prepare_clone_path(workspace_path: Path, request: CloneRequest) -> Path:
     clone_path = workspace_path / "repo"
-    if not clone_path.exists():
-        return clone_path
+    try:
+        if not clone_path.exists():
+            return clone_path
+    except OSError as exc:
+        raise WorkspaceError("Analysis workspace could not be prepared.") from exc
 
     try:
         cleanup_analysis_workspace(workspace_path)
@@ -74,6 +75,29 @@ def _prepare_clone_path(workspace_path: Path, request: CloneRequest) -> Path:
     return workspace_path / "repo"
 
 
+def _run_git_clone(repo_url: str, clone_path: Path, request: CloneRequest) -> None:
+    command = [
+        os.environ.get("GIT_PYTHON_GIT_EXECUTABLE", "git"),
+        "clone",
+        "--depth",
+        str(request.clone_depth),
+        "--single-branch",
+        "--",
+        repo_url,
+        os.fspath(clone_path),
+    ]
+    env = os.environ.copy()
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    subprocess.run(
+        command,
+        check=True,
+        capture_output=True,
+        env=env,
+        text=True,
+        timeout=request.clone_timeout_seconds,
+    )
+
+
 def _cleanup_workspace_or_raise(workspace_path: Path) -> None:
     try:
         cleanup_analysis_workspace(workspace_path)
@@ -81,11 +105,6 @@ def _cleanup_workspace_or_raise(workspace_path: Path) -> None:
         raise
     except OSError as exc:
         raise WorkspaceError("Analysis workspace could not be prepared.") from exc
-
-
-def _is_timeout_error(exc: GitCommandError) -> bool:
-    error_text = f"{exc}".lower()
-    return "timeout" in error_text or "timed out" in error_text or "kill_after_timeout" in error_text
 
 
 def _commit_sha(repo: Repo) -> str | None:
