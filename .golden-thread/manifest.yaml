@@ -1,0 +1,49 @@
+# @golden-thread FEAT-SCAFFOLD-001, BR-CORE-001, TC-CORE-001, V-CORE-001
+version: "1.0"
+feature:
+  id: FEAT-SCAFFOLD-001
+  name: Scaffold monorepo + Docker Compose environment
+  status: planned
+  implementation_order: 1
+traceability:
+  business_requirements:
+    - BR-CORE-001
+  user_requirements:
+    - UR-USER-001
+    - UR-USER-002
+  functional_requirements:
+    - FR-ING-001
+    - FR-OBJ-001
+  rest_endpoints:
+    - REST-ANALYZE-001
+    - REST-RESULTS-001
+  call_flows:
+    - CF-ANALYZE-001
+    - CF-RESULTS-001
+    - CF-ANALYZE-INGEST-001
+    - CF-ANALYZE-GRAPH-001
+    - CF-ANALYZE-OBJMAP-001
+    - CF-ANALYZE-ORPHAN-001
+    - CF-ANALYZE-PARSE-001
+    - CF-ANALYZE-SCORE-001
+  test_cases:
+    - TC-ING-001
+    - TC-OBJ-001
+    - TC-CORE-001
+  verifications:
+    - V-ING-001
+    - V-OBJ-001
+    - V-CORE-001
+services:
+  frontend:
+    path: frontend/
+    manifest: frontend/.golden-thread/manifest.yaml
+    role: Next.js frontend
+  backend:
+    path: backend/
+    manifest: backend/.golden-thread/manifest.yaml
+    role: Python analysis backend
+  neo4j:
+    path: graph-db/
+    manifest: graph-db/.golden-thread/manifest.yaml
+    role: Neo4j graph store

@@ -216,3 +216,28 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+.agent*
+skills-lock.json
+
+# Project local state
+.golden-thread-cache/
+.golden-thread-reports/
+
+# Docker and graph store data
+neo4j-data/
+graph-db/data/
+graph-db/logs/
+graph-db/import/
+graph-db/plugins/
+
+# Frontend dependencies and build outputs
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+!frontend/lib/
+!frontend/lib/**

@@ -1,0 +1,36 @@
+version: "1.0"
+service:
+  name: Next.js Frontend
+  path: frontend/
+  feature: FEAT-SCAFFOLD-001
+traceability:
+  business_requirements:
+    - BR-CORE-001
+  user_requirements:
+    - UR-USER-001
+    - UR-USER-002
+  rest_endpoints:
+    - REST-ANALYZE-001
+    - REST-RESULTS-001
+  call_flows:
+    - CF-ANALYZE-001
+    - CF-RESULTS-001
+  test_cases:
+    - TC-CORE-001
+  verifications:
+    - V-CORE-001
+files:
+  app/page.tsx:
+    implements:
+      - UR-USER-001
+      - UR-USER-002
+      - CF-ANALYZE-001
+      - CF-RESULTS-001
+  lib/api.ts:
+    implements:
+      - REST-ANALYZE-001
+      - REST-RESULTS-001
+  tests/acceptance/TC-CORE-001.md:
+    verifies:
+      - TC-CORE-001
+      - V-CORE-001

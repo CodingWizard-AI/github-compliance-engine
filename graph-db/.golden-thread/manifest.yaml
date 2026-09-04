@@ -1,0 +1,30 @@
+version: "1.0"
+service:
+  name: Neo4j Graph Store
+  path: graph-db/
+  feature: FEAT-SCAFFOLD-001
+traceability:
+  business_requirements:
+    - BR-CORE-001
+  call_flows:
+    - CF-ANALYZE-GRAPH-001
+  test_cases:
+    - TC-CORE-001
+  verifications:
+    - V-CORE-001
+files:
+  init/constraints.cypher:
+    implements:
+      - CF-ANALYZE-GRAPH-001
+    verifies:
+      - TC-CORE-001
+      - V-CORE-001
+  init/indexes.cypher:
+    implements:
+      - CF-ANALYZE-GRAPH-001
+    verifies:
+      - TC-CORE-001
+      - V-CORE-001
+  schema/node-labels-and-relationships.md:
+    documents:
+      - CF-ANALYZE-GRAPH-001
