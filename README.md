@@ -56,11 +56,35 @@ NEO4J_USER=neo4j
 NEO4J_PASSWORD=local-dev-password
 NEO4J_HTTP_PORT=7474
 NEO4J_BOLT_PORT=7687
+INGESTION_WORKSPACE_ROOT=/tmp/github-compliance-engine/analyses
+INGESTION_CLONE_DEPTH=1
+INGESTION_CLONE_TIMEOUT_SECONDS=60
+GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 ```
 
 Do not commit `.env`; it is ignored by git.
 
 `NEO4J_PASSWORD` is required by Compose and the backend runtime. The placeholder belongs only in `.env.example`; set a local value in `.env` before running Docker commands.
+
+For one-off Docker commands, export the full local configuration in the same terminal before building or starting services:
+
+```sh
+export NEXT_PUBLIC_BACKEND_BASE_URL=http://localhost:8000
+export FRONTEND_HOSTNAME=0.0.0.0
+export FRONTEND_PORT=3000
+export BACKEND_HOST=0.0.0.0
+export BACKEND_PORT=8000
+export BACKEND_CORS_ORIGINS=http://localhost:3000
+export NEO4J_URI=bolt://neo4j:7687
+export NEO4J_USER=neo4j
+export NEO4J_PASSWORD=local-dev-password
+export NEO4J_HTTP_PORT=7474
+export NEO4J_BOLT_PORT=7687
+export INGESTION_WORKSPACE_ROOT=/tmp/github-compliance-engine/analyses
+export INGESTION_CLONE_DEPTH=1
+export INGESTION_CLONE_TIMEOUT_SECONDS=60
+export GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
+```
 
 ### Validate Compose
 
@@ -74,6 +98,40 @@ docker compose config
 docker compose build
 ```
 
+### Graph Store Commands
+
+Run these from the repository root after exporting the configuration variables above in the same terminal.
+
+Validate the Compose graph-store configuration:
+
+```sh
+docker compose config
+```
+
+Start Neo4j and apply graph constraints/indexes through the one-shot init service:
+
+```sh
+docker compose up --build -d neo4j neo4j-init
+```
+
+Verify the required graph constraints:
+
+```sh
+docker compose exec -T neo4j /var/lib/neo4j/bin/cypher-shell \
+  -u "$NEO4J_USER" \
+  -p "$NEO4J_PASSWORD" \
+  "SHOW CONSTRAINTS YIELD name RETURN collect(name) AS constraints;"
+```
+
+Verify the required full-text and vector indexes:
+
+```sh
+docker compose exec -T neo4j /var/lib/neo4j/bin/cypher-shell \
+  -u "$NEO4J_USER" \
+  -p "$NEO4J_PASSWORD" \
+  "SHOW INDEXES YIELD name, type RETURN name, type ORDER BY name;"
+```
+
 ### Start the stack
 
 Build and start the complete scaffold stack:
@@ -83,6 +141,10 @@ docker compose up --build
 ```
 
 The frontend calls the backend through `http://localhost:8000`, matching the browser-visible API port. Neo4j uses the Compose network address `bolt://neo4j:7687` from the backend container and exposes Bolt locally at `bolt://localhost:7687`.
+
+`POST /api/analyze` now validates the submitted URL and performs a real shallow clone of the public GitHub repository into `INGESTION_WORKSPACE_ROOT`. Clone depth and timeout are controlled by `INGESTION_CLONE_DEPTH` and `INGESTION_CLONE_TIMEOUT_SECONDS`.
+
+The backend image installs `git` and sets `GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git` so GitPython can initialize during container startup.
 
 ### Smoke test the acceptance path
 
@@ -98,7 +160,7 @@ Submit:
 https://github.com/octocat/Hello-World
 ```
 
-The scaffold should show an accepted analysis ID, placeholder graph nodes and edges, objective mappings, orphaned code units, and a traceability score.
+The scaffold should show an accepted analysis ID after the backend completes the shallow clone. The results route still returns placeholder graph nodes and edges, objective mappings, orphaned code units, and a traceability score.
 
 You can also call the backend directly:
 
@@ -109,6 +171,16 @@ curl -s -X POST http://localhost:8000/api/analyze \
 ```
 
 Expected Golden Thread coverage for this scaffold is `FEAT-SCAFFOLD-001`, `TC-ING-001`, `TC-OBJ-001`, `TC-CORE-001`, `V-ING-001`, `V-OBJ-001`, and `V-CORE-001`.
+
+Expected ingestion PR coverage is `FEAT-ING-001`, `BR-CORE-001`, `UR-USER-001`, `FR-ING-001`, `REST-ANALYZE-001`, `CF-ANALYZE-INGEST-001`, `TC-ING-001`, and `V-ING-001`.
+
+PR acceptance checks:
+
+- `cd backend && .venv/bin/python -m pytest`
+- `cd frontend && npm run lint`
+- `cd frontend && npm run build`
+- `docker compose config`
+- Secret scan confirms `.env`, cloned repositories, Notion tokens, GitHub tokens, real Notion database IDs, and raw credentials are not committed.
 
 Neo4j constraints and indexes are applied by the one-shot `neo4j-init` Compose service after Neo4j accepts Bolt connections.
 
