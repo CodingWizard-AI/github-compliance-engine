@@ -100,9 +100,17 @@ def test_metadata_extraction_error_uses_safe_message() -> None:
     assert raw_detail not in error.safe_message
 
 
-def test_extract_repo_metadata_returns_contract_metadata_for_clone_directory(tmp_path: Path) -> None:
+def test_extract_repo_metadata_returns_contract_metadata_for_clone_directory(tmp_path: Path, monkeypatch) -> None:
     clone_path = tmp_path / "repo"
     clone_path.mkdir()
+
+    class Response:
+        status_code = 200
+
+        def json(self):
+            return {"Python": 1}
+
+    monkeypatch.setattr("github_compliance_engine_api.ingestion.metadata.httpx.get", lambda *args, **kwargs: Response())
     request = MetadataExtractionRequest(
         analysis_id="analysis-001",
         repo_url="https://github.com/octocat/Hello-World",
@@ -113,7 +121,7 @@ def test_extract_repo_metadata_returns_contract_metadata_for_clone_directory(tmp
 
     assert metadata.readme is None
     assert metadata.file_tree == FileTreeNode(path=".", name=".", type="dir")
-    assert metadata.language_mix == []
+    assert metadata.language_mix[0].language == "Python"
     assert metadata.manifests == []
     assert metadata.extraction_errors == []
 
