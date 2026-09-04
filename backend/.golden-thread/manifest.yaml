@@ -28,8 +28,10 @@ traceability:
 files:
   src/github_compliance_engine_api/api/routes.py:
     implements:
+      - FEAT-ING-001
       - REST-ANALYZE-001
       - REST-RESULTS-001
+      - CF-ANALYZE-INGEST-001
   tests/integration/test_analyze_route.py:
     verifies:
       - TC-ING-001

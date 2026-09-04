@@ -20,6 +20,7 @@ class AnalyzeResponse(BaseModel):
     analysis_id: str
     status: Literal["accepted"]
     repo_url: str
+    clone_status: Literal["cloned"]
 
 
 class AnalysisResultsResponse(BaseModel):
