@@ -24,12 +24,15 @@ NEO4J_PASSWORD=local-dev-password
 INGESTION_WORKSPACE_ROOT=/tmp/github-compliance-engine/analyses
 INGESTION_CLONE_DEPTH=1
 INGESTION_CLONE_TIMEOUT_SECONDS=60
+GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 ```
 
 The ingestion runtime uses an ephemeral per-analysis workspace under
 `INGESTION_WORKSPACE_ROOT`. `POST /api/analyze` performs a real shallow clone
 with `INGESTION_CLONE_DEPTH` and stops clone execution after
-`INGESTION_CLONE_TIMEOUT_SECONDS`.
+`INGESTION_CLONE_TIMEOUT_SECONDS`. Docker sets
+`GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git` because GitPython requires a `git`
+binary at import time.
 
 ## Local Development
 

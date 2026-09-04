@@ -59,6 +59,7 @@ NEO4J_BOLT_PORT=7687
 INGESTION_WORKSPACE_ROOT=/tmp/github-compliance-engine/analyses
 INGESTION_CLONE_DEPTH=1
 INGESTION_CLONE_TIMEOUT_SECONDS=60
+GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 ```
 
 Do not commit `.env`; it is ignored by git.
@@ -82,6 +83,7 @@ export NEO4J_BOLT_PORT=7687
 export INGESTION_WORKSPACE_ROOT=/tmp/github-compliance-engine/analyses
 export INGESTION_CLONE_DEPTH=1
 export INGESTION_CLONE_TIMEOUT_SECONDS=60
+export GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git
 ```
 
 ### Validate Compose
@@ -141,6 +143,8 @@ docker compose up --build
 The frontend calls the backend through `http://localhost:8000`, matching the browser-visible API port. Neo4j uses the Compose network address `bolt://neo4j:7687` from the backend container and exposes Bolt locally at `bolt://localhost:7687`.
 
 `POST /api/analyze` now validates the submitted URL and performs a real shallow clone of the public GitHub repository into `INGESTION_WORKSPACE_ROOT`. Clone depth and timeout are controlled by `INGESTION_CLONE_DEPTH` and `INGESTION_CLONE_TIMEOUT_SECONDS`.
+
+The backend image installs `git` and sets `GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git` so GitPython can initialize during container startup.
 
 ### Smoke test the acceptance path
 
