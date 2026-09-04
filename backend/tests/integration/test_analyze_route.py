@@ -127,15 +127,23 @@ def test_analyze_rejects_missing_repo_path(monkeypatch) -> None:
 def test_analyze_rejects_credential_bearing_repo_url(monkeypatch) -> None:
     clone_repository = Mock()
     monkeypatch.setattr("github_compliance_engine_api.api.routes.clone_repository", clone_repository)
-    userinfo = "user" + ":" + "pass" + "word" + "@"
+    username = "review-user"
+    password = "review-secret"
+    repo_url = f"https://{username}:{password}@github.com/octocat/Hello-World"
     client = TestClient(create_app())
 
     response = client.post(
         "/api/analyze",
-        json={"repo_url": "https://" + userinfo + "github.com/octocat/Hello-World"},
+        json={"repo_url": repo_url},
     )
 
     assert response.status_code == 422
+    response_text = response.text
+    assert username not in response_text
+    assert password not in response_text
+    assert repo_url not in response_text
+    assert "input" not in response.json()["detail"][0]
+    assert "ctx" not in response.json()["detail"][0]
     clone_repository.assert_not_called()
 
 
