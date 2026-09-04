@@ -6,6 +6,7 @@ service:
   features:
     - FEAT-SCAFFOLD-001
     - FEAT-ING-001
+    - FEAT-ING-002
 traceability:
   business_requirements:
     - BR-CORE-001
@@ -13,6 +14,7 @@ traceability:
     - UR-USER-001
   functional_requirements:
     - FR-ING-001
+    - FR-ING-002
     - FR-OBJ-001
   call_flows:
     - CF-ANALYZE-INGEST-001
@@ -21,9 +23,11 @@ traceability:
     - REST-RESULTS-001
   test_cases:
     - TC-ING-001
+    - TC-ING-002
     - TC-OBJ-001
   verifications:
     - V-ING-001
+    - V-ING-002
     - V-OBJ-001
 files:
   src/github_compliance_engine_api/api/routes.py:
@@ -43,7 +47,14 @@ files:
   src/github_compliance_engine_api/ingestion/contracts.py:
     implements:
       - FEAT-ING-001
+      - FEAT-ING-002
       - FR-ING-001
+      - FR-ING-002
+      - CF-ANALYZE-INGEST-001
+  src/github_compliance_engine_api/ingestion/metadata.py:
+    implements:
+      - FEAT-ING-002
+      - FR-ING-002
       - CF-ANALYZE-INGEST-001
   src/github_compliance_engine_api/github_urls.py:
     implements:
@@ -64,10 +75,16 @@ files:
     verifies:
       - TC-ING-001
       - V-ING-001
+  tests/unit/test_ingestion_metadata_contracts.py:
+    verifies:
+      - TC-ING-002
+      - V-ING-002
   tests/unit/test_ingestion_settings.py:
     verifies:
       - TC-ING-001
+      - TC-ING-002
       - V-ING-001
+      - V-ING-002
   tests/unit/test_ingestion_workspace.py:
     verifies:
       - TC-ING-001

@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +22,34 @@ class Settings(BaseSettings):
         ge=1,
         alias="INGESTION_CLONE_TIMEOUT_SECONDS",
     )
+    ingestion_metadata_timeout_seconds: int = Field(
+        default=30,
+        ge=1,
+        alias="INGESTION_METADATA_TIMEOUT_SECONDS",
+    )
+    ingestion_file_tree_max_depth: int = Field(
+        default=20,
+        ge=1,
+        alias="INGESTION_FILE_TREE_MAX_DEPTH",
+    )
+    ingestion_file_tree_max_files: int = Field(
+        default=5000,
+        ge=1,
+        alias="INGESTION_FILE_TREE_MAX_FILES",
+    )
+    ingestion_max_text_file_bytes: int = Field(
+        default=1048576,
+        ge=1,
+        alias="INGESTION_MAX_TEXT_FILE_BYTES",
+    )
+    github_token: str | None = Field(default=None, alias="GITHUB_TOKEN")
+
+    @field_validator("github_token", mode="before")
+    @classmethod
+    def empty_github_token_is_none(cls, value: str | None) -> str | None:
+        if value == "":
+            return None
+        return value
 
     @property
     def cors_origins(self) -> list[str]:
