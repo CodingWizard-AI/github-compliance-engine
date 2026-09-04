@@ -3,12 +3,19 @@ service:
   name: Python Analysis Backend
   path: backend/
   feature: FEAT-SCAFFOLD-001
+  features:
+    - FEAT-SCAFFOLD-001
+    - FEAT-ING-001
 traceability:
   business_requirements:
     - BR-CORE-001
+  user_requirements:
+    - UR-USER-001
   functional_requirements:
     - FR-ING-001
     - FR-OBJ-001
+  call_flows:
+    - CF-ANALYZE-INGEST-001
   rest_endpoints:
     - REST-ANALYZE-001
     - REST-RESULTS-001
@@ -31,3 +38,25 @@ files:
     verifies:
       - TC-OBJ-001
       - V-OBJ-001
+  src/github_compliance_engine_api/ingestion/contracts.py:
+    implements:
+      - FEAT-ING-001
+      - FR-ING-001
+      - CF-ANALYZE-INGEST-001
+  src/github_compliance_engine_api/ingestion/workspace.py:
+    implements:
+      - FEAT-ING-001
+      - FR-ING-001
+      - CF-ANALYZE-INGEST-001
+  tests/unit/test_ingestion_contracts.py:
+    verifies:
+      - TC-ING-001
+      - V-ING-001
+  tests/unit/test_ingestion_settings.py:
+    verifies:
+      - TC-ING-001
+      - V-ING-001
+  tests/unit/test_ingestion_workspace.py:
+    verifies:
+      - TC-ING-001
+      - V-ING-001

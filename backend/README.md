@@ -20,7 +20,15 @@ BACKEND_PORT=8000
 NEO4J_URI=bolt://neo4j:7687
 NEO4J_USER=neo4j
 NEO4J_PASSWORD=local-dev-password
+INGESTION_WORKSPACE_ROOT=/tmp/github-compliance-engine/analyses
+INGESTION_CLONE_DEPTH=1
+INGESTION_CLONE_TIMEOUT_SECONDS=60
 ```
+
+The ingestion contract uses an ephemeral per-analysis workspace under
+`INGESTION_WORKSPACE_ROOT`. Clone execution is intentionally deferred to the
+next `FEAT-ING-001` commit; the current backend route still returns the
+deterministic scaffold response.
 
 ## Local Development
 
