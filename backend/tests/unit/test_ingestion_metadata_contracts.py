@@ -100,7 +100,7 @@ def test_metadata_extraction_error_uses_safe_message() -> None:
     assert raw_detail not in error.safe_message
 
 
-def test_extract_repo_metadata_returns_empty_metadata_for_clone_directory(tmp_path: Path) -> None:
+def test_extract_repo_metadata_returns_contract_metadata_for_clone_directory(tmp_path: Path) -> None:
     clone_path = tmp_path / "repo"
     clone_path.mkdir()
     request = MetadataExtractionRequest(
@@ -111,7 +111,11 @@ def test_extract_repo_metadata_returns_empty_metadata_for_clone_directory(tmp_pa
 
     metadata = extract_repo_metadata(request)
 
-    assert metadata == RepoMetadata()
+    assert metadata.readme is None
+    assert metadata.file_tree == FileTreeNode(path=".", name=".", type="dir")
+    assert metadata.language_mix == []
+    assert metadata.manifests == []
+    assert metadata.extraction_errors == []
 
 
 @pytest.mark.parametrize("path_name", ["missing-repo", "repo-file"])

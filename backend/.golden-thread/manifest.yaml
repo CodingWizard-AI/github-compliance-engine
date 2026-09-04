@@ -79,6 +79,10 @@ files:
     verifies:
       - TC-ING-002
       - V-ING-002
+  tests/unit/test_ingestion_metadata.py:
+    verifies:
+      - TC-ING-002
+      - V-ING-002
   tests/unit/test_ingestion_settings.py:
     verifies:
       - TC-ING-001
