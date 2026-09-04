@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 
+from github_compliance_engine_api.github_urls import validate_public_github_repo_url
+
 
 # @golden-thread FEAT-ING-001, FR-ING-001, CF-ANALYZE-INGEST-001, TC-ING-001, V-ING-001
 class CloneRequest(BaseModel):
@@ -15,10 +17,7 @@ class CloneRequest(BaseModel):
     @field_validator("repo_url")
     @classmethod
     def validate_github_repo_url(cls, value: HttpUrl) -> HttpUrl:
-        path_segments = [segment for segment in value.path.split("/") if segment]
-        if value.scheme != "https" or value.host != "github.com" or len(path_segments) != 2:
-            raise ValueError("repo_url must be an HTTPS GitHub repository URL: https://github.com/{owner}/{repo}")
-        return value
+        return validate_public_github_repo_url(value)
 
 
 class CloneResult(BaseModel):

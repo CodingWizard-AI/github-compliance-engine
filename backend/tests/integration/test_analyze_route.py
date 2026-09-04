@@ -3,6 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+import pytest
 from fastapi.testclient import TestClient
 
 from github_compliance_engine_api.ingestion import (
@@ -118,6 +119,40 @@ def test_analyze_rejects_missing_repo_path(monkeypatch) -> None:
         "/api/analyze",
         json={"repo_url": "https://github.com/octocat"},
     )
+
+    assert response.status_code == 422
+    clone_repository.assert_not_called()
+
+
+def test_analyze_rejects_credential_bearing_repo_url(monkeypatch) -> None:
+    clone_repository = Mock()
+    monkeypatch.setattr("github_compliance_engine_api.api.routes.clone_repository", clone_repository)
+    userinfo = "user" + ":" + "pass" + "word" + "@"
+    client = TestClient(create_app())
+
+    response = client.post(
+        "/api/analyze",
+        json={"repo_url": "https://" + userinfo + "github.com/octocat/Hello-World"},
+    )
+
+    assert response.status_code == 422
+    clone_repository.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "repo_url",
+    [
+        "https://github.com:444/octocat/Hello-World",
+        "https://github.com/octocat/Hello-World?decorated=value",
+        "https://github.com/octocat/Hello-World#fragment",
+    ],
+)
+def test_analyze_rejects_decorated_repo_urls(repo_url: str, monkeypatch) -> None:
+    clone_repository = Mock()
+    monkeypatch.setattr("github_compliance_engine_api.api.routes.clone_repository", clone_repository)
+    client = TestClient(create_app())
+
+    response = client.post("/api/analyze", json={"repo_url": repo_url})
 
     assert response.status_code == 422
     clone_repository.assert_not_called()

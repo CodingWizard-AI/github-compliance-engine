@@ -43,6 +43,21 @@ def test_clone_repository_uses_depth_one_by_default(tmp_path: Path, monkeypatch)
     )
 
 
+def test_clone_repository_passes_canonical_repo_url_to_git(tmp_path: Path, monkeypatch) -> None:
+    request = CloneRequest(
+        analysis_id="analysis-001",
+        repo_url="https://github.com:443/octocat/Hello-World",
+        workspace_root=tmp_path,
+    )
+    clone_from = Mock(return_value=git_repo())
+    monkeypatch.setattr("github_compliance_engine_api.ingestion.clone.Repo.clone_from", clone_from)
+
+    result = clone_repository(request)
+
+    assert result.repo_url == "https://github.com/octocat/Hello-World"
+    assert clone_from.call_args.args[0] == "https://github.com/octocat/Hello-World"
+
+
 def test_clone_repository_creates_isolated_workspace_and_returns_result(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(
         "github_compliance_engine_api.ingestion.clone.Repo.clone_from",
@@ -95,6 +110,38 @@ def test_clone_repository_maps_pre_existing_cleanup_failure(tmp_path: Path, monk
 
     assert exc_info.value.safe_message == "Analysis workspace could not be prepared."
     clone_from.assert_not_called()
+
+
+def test_clone_repository_maps_git_error_cleanup_failure(tmp_path: Path, monkeypatch) -> None:
+    clone_from = Mock(side_effect=GitCommandError("clone", "fatal unavailable"))
+    monkeypatch.setattr("github_compliance_engine_api.ingestion.clone.Repo.clone_from", clone_from)
+    cleanup_error = "CLEANUP" + "_DETAIL"
+    monkeypatch.setattr(
+        "github_compliance_engine_api.ingestion.clone.cleanup_analysis_workspace",
+        Mock(side_effect=OSError(cleanup_error)),
+    )
+
+    with pytest.raises(WorkspaceError) as exc_info:
+        clone_repository(clone_request(tmp_path))
+
+    assert exc_info.value.safe_message == "Analysis workspace could not be prepared."
+    assert cleanup_error not in exc_info.value.safe_message
+
+
+def test_clone_repository_maps_timeout_cleanup_failure(tmp_path: Path, monkeypatch) -> None:
+    clone_from = Mock(side_effect=GitCommandError("clone", "kill_after_timeout reached"))
+    monkeypatch.setattr("github_compliance_engine_api.ingestion.clone.Repo.clone_from", clone_from)
+    cleanup_error = "CLEANUP" + "_DETAIL"
+    monkeypatch.setattr(
+        "github_compliance_engine_api.ingestion.clone.cleanup_analysis_workspace",
+        Mock(side_effect=OSError(cleanup_error)),
+    )
+
+    with pytest.raises(WorkspaceError) as exc_info:
+        clone_repository(clone_request(tmp_path))
+
+    assert exc_info.value.safe_message == "Analysis workspace could not be prepared."
+    assert cleanup_error not in exc_info.value.safe_message
 
 
 def test_clone_repository_maps_git_errors_to_safe_exception(tmp_path: Path, monkeypatch) -> None:

@@ -45,6 +45,11 @@ files:
       - FEAT-ING-001
       - FR-ING-001
       - CF-ANALYZE-INGEST-001
+  src/github_compliance_engine_api/github_urls.py:
+    implements:
+      - FEAT-ING-001
+      - FR-ING-001
+      - CF-ANALYZE-INGEST-001
   src/github_compliance_engine_api/ingestion/workspace.py:
     implements:
       - FEAT-ING-001

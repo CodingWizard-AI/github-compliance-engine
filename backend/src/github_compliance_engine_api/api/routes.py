@@ -8,6 +8,7 @@ from github_compliance_engine_api.api.schemas import (
     AnalyzeResponse,
     AnalysisResultsResponse,
 )
+from github_compliance_engine_api.github_urls import canonical_github_repo_url
 from github_compliance_engine_api.ingestion import (
     CloneRequest,
     CloneTimeoutError,
@@ -34,7 +35,7 @@ def analyze_repo(payload: AnalyzeRequest) -> AnalyzeResponse:
     analysis_id = generate_analysis_id()
     clone_request = CloneRequest(
         analysis_id=analysis_id,
-        repo_url=payload.repo_url,
+        repo_url=canonical_github_repo_url(payload.repo_url),
         workspace_root=settings.ingestion_workspace_root,
         clone_depth=settings.ingestion_clone_depth,
         clone_timeout_seconds=settings.ingestion_clone_timeout_seconds,

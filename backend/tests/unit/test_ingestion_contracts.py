@@ -19,6 +19,16 @@ def test_clone_request_accepts_github_repo_url() -> None:
     assert request.clone_timeout_seconds == 60
 
 
+def test_clone_request_accepts_default_https_port_as_canonical_url() -> None:
+    request = CloneRequest(
+        analysis_id="analysis-001",
+        repo_url="https://github.com:443/octocat/Hello-World",
+        workspace_root=Path("/tmp/github-compliance-engine/analyses"),
+    )
+
+    assert str(request.repo_url) == "https://github.com/octocat/Hello-World"
+
+
 def test_clone_request_rejects_non_github_repo_url() -> None:
     with pytest.raises(ValidationError):
         CloneRequest(
@@ -42,6 +52,25 @@ def test_clone_request_rejects_missing_repo_path() -> None:
         CloneRequest(
             analysis_id="analysis-001",
             repo_url="https://github.com/octocat",
+            workspace_root=Path("/tmp/github-compliance-engine/analyses"),
+        )
+
+
+@pytest.mark.parametrize(
+    "repo_url",
+    [
+        "https://" + "user" + ":" + "pass" + "word" + "@" + "github.com/octocat/Hello-World",
+        "https://github.com:444/octocat/Hello-World",
+        "https://github.com/octocat/Hello-World?decorated=value",
+        "https://github.com/octocat/Hello-World#fragment",
+        "https://github.com/octocat/Hello-World/",
+    ],
+)
+def test_clone_request_rejects_decorated_github_urls(repo_url: str) -> None:
+    with pytest.raises(ValidationError):
+        CloneRequest(
+            analysis_id="analysis-001",
+            repo_url=repo_url,
             workspace_root=Path("/tmp/github-compliance-engine/analyses"),
         )
 
