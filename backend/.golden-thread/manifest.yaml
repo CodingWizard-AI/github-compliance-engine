@@ -48,6 +48,11 @@ files:
       - FEAT-ING-001
       - FR-ING-001
       - CF-ANALYZE-INGEST-001
+  src/github_compliance_engine_api/ingestion/clone.py:
+    implements:
+      - FEAT-ING-001
+      - FR-ING-001
+      - CF-ANALYZE-INGEST-001
   tests/unit/test_ingestion_contracts.py:
     verifies:
       - TC-ING-001
@@ -57,6 +62,10 @@ files:
       - TC-ING-001
       - V-ING-001
   tests/unit/test_ingestion_workspace.py:
+    verifies:
+      - TC-ING-001
+      - V-ING-001
+  tests/unit/test_ingestion_clone.py:
     verifies:
       - TC-ING-001
       - V-ING-001
