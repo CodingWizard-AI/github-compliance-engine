@@ -8,23 +8,29 @@ from github_compliance_engine_api.api.schemas import (
     AnalyzeResponse,
     AnalysisResultsResponse,
 )
+from github_compliance_engine_api.analysis_store import GoldenThreadAnalysis, save_analysis
 from github_compliance_engine_api.github_urls import canonical_github_repo_url
 from github_compliance_engine_api.ingestion import (
     CloneRequest,
     CloneTimeoutError,
+    MetadataExtractionError,
+    MetadataExtractionRequest,
     RepositoryUnavailableError,
     WorkspaceError,
     clone_repository,
+    extract_repo_metadata,
 )
 from github_compliance_engine_api.objective_mapping import anchor_public_interfaces
 from github_compliance_engine_api.settings import get_settings
 
 
 WORKSPACE_ERROR_MESSAGE = "Analysis workspace could not be prepared."
+METADATA_ERROR_MESSAGE = "Repository metadata could not be extracted."
 logger = logging.getLogger(__name__)
 
 
 # @golden-thread FEAT-SCAFFOLD-001, FEAT-ING-001, FR-ING-001, REST-ANALYZE-001, CF-ANALYZE-INGEST-001, TC-ING-001, V-ING-001
+# @golden-thread FEAT-ING-002, FR-ING-002, CF-ANALYZE-INGEST-001, TC-ING-002, V-ING-002
 # @golden-thread FEAT-SCAFFOLD-001, FR-OBJ-001, REST-RESULTS-001, TC-OBJ-001, V-OBJ-001
 router = APIRouter(prefix="/api", tags=["analysis"])
 
@@ -51,6 +57,41 @@ def analyze_repo(payload: AnalyzeRequest) -> AnalyzeResponse:
     except WorkspaceError as exc:
         log_ingestion_error(analysis_id, status.HTTP_500_INTERNAL_SERVER_ERROR, exc)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=WORKSPACE_ERROR_MESSAGE) from exc
+
+    metadata_request = MetadataExtractionRequest(
+        analysis_id=clone_result.analysis_id,
+        repo_url=clone_result.repo_url,
+        local_clone_path=clone_result.local_clone_path,
+        timeout_seconds=settings.ingestion_metadata_timeout_seconds,
+        max_tree_depth=settings.ingestion_file_tree_max_depth,
+        max_file_count=settings.ingestion_file_tree_max_files,
+        max_text_file_bytes=settings.ingestion_max_text_file_bytes,
+        github_token=settings.github_token,
+    )
+    try:
+        repo_metadata = extract_repo_metadata(metadata_request)
+    except MetadataExtractionError as exc:
+        save_analysis(
+            GoldenThreadAnalysis(
+                analysis_id=clone_result.analysis_id,
+                repo_url=clone_result.repo_url,
+                status="failed",
+                clone_result=clone_result,
+            )
+        )
+        log_ingestion_error(analysis_id, status.HTTP_500_INTERNAL_SERVER_ERROR, exc)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=METADATA_ERROR_MESSAGE) from exc
+
+    save_analysis(
+        GoldenThreadAnalysis(
+            analysis_id=clone_result.analysis_id,
+            repo_url=clone_result.repo_url,
+            status="metadata_extracted",
+            clone_result=clone_result,
+            repo_metadata=repo_metadata,
+            errors=repo_metadata.extraction_errors,
+        )
+    )
 
     return AnalyzeResponse(
         analysis_id=clone_result.analysis_id,
