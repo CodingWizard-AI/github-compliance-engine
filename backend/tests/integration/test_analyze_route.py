@@ -77,6 +77,7 @@ def test_analyze_accepts_public_github_repo_url(tmp_path: Path, monkeypatch) -> 
     assert metadata_request.analysis_id == body["analysis_id"]
     assert metadata_request.repo_url == "https://github.com/octocat/Hello-World"
     assert metadata_request.local_clone_path == tmp_path / body["analysis_id"] / "repo"
+    assert metadata_request.workspace_root == tmp_path
     assert metadata_request.timeout_seconds == 30
     assert metadata_request.max_tree_depth == 20
     assert metadata_request.max_file_count == 5000

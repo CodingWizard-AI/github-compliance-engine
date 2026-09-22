@@ -26,6 +26,7 @@ def metadata_request(
         analysis_id="analysis-001",
         repo_url="https://github.com/octocat/Hello-World",
         local_clone_path=clone_path,
+        workspace_root=clone_path.parent,
         github_token=github_token,
         max_tree_depth=max_tree_depth,
         max_file_count=max_file_count,
@@ -266,6 +267,31 @@ def test_extract_repo_metadata_does_not_leak_absolute_paths_or_raw_exception_det
     assert str(clone_path) not in error_text
 
 
+def test_extract_repo_metadata_stops_with_safe_partial_result_at_deadline(tmp_path: Path, monkeypatch) -> None:
+    clone_path = tmp_path / "repo"
+    clone_path.mkdir()
+    (clone_path / "README.md").write_text("# Project\n", encoding="utf-8")
+    api_get = pytest.fail
+    clock_calls = 0
+
+    def expired_clock() -> float:
+        nonlocal clock_calls
+        clock_calls += 1
+        return 0.0 if clock_calls == 1 else 31.0
+
+    monkeypatch.setattr("github_compliance_engine_api.ingestion.metadata.monotonic", expired_clock)
+    monkeypatch.setattr("github_compliance_engine_api.ingestion.metadata.httpx.get", api_get)
+
+    metadata = extract_repo_metadata(metadata_request(clone_path))
+
+    assert metadata.readme is None
+    assert metadata.file_tree is not None
+    assert metadata.file_tree.truncated is True
+    assert metadata.language_mix == []
+    assert [error.code for error in metadata.extraction_errors] == ["METADATA_TIMEOUT"]
+    assert metadata.extraction_errors[0].message == "Repository metadata extraction timed out."
+
+
 def test_language_mix_uses_github_languages_api(tmp_path: Path, monkeypatch) -> None:
     clone_path = tmp_path / "repo"
     clone_path.mkdir()
@@ -289,7 +315,7 @@ def test_language_mix_uses_github_languages_api(tmp_path: Path, monkeypatch) -> 
 
     assert captured_request["url"] == "https://api.github.com/repos/octocat/Hello-World/languages"
     assert captured_request["headers"]["Authorization"] == "Bearer secret-token"
-    assert captured_request["timeout"] == 30
+    assert 0 < captured_request["timeout"] <= 30
     assert [(entry.language, entry.normalized_language, entry.bytes, entry.coverage_pct) for entry in metadata.language_mix] == [
         ("Python", "python", 300, 60.0),
         ("HTML", "unsupported", 100, 20.0),

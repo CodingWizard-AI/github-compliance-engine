@@ -54,6 +54,7 @@ class MetadataExtractionRequest(BaseModel):
     analysis_id: str = Field(min_length=1)
     repo_url: str = Field(min_length=1)
     local_clone_path: Path
+    workspace_root: Path
     timeout_seconds: int = Field(default=30, ge=1)
     max_tree_depth: int = Field(default=20, ge=1)
     max_file_count: int = Field(default=5000, ge=1)

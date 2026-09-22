@@ -19,6 +19,7 @@ def test_metadata_extraction_request_accepts_valid_defaults(tmp_path: Path) -> N
         analysis_id="analysis-001",
         repo_url="https://github.com/octocat/Hello-World",
         local_clone_path=tmp_path,
+        workspace_root=tmp_path,
     )
 
     assert request.timeout_seconds == 30
@@ -42,6 +43,7 @@ def test_metadata_extraction_request_rejects_invalid_limits(tmp_path: Path, fiel
         "analysis_id": "analysis-001",
         "repo_url": "https://github.com/octocat/Hello-World",
         "local_clone_path": tmp_path,
+        "workspace_root": tmp_path,
         field: 0,
     }
 
@@ -115,6 +117,7 @@ def test_extract_repo_metadata_returns_contract_metadata_for_clone_directory(tmp
         analysis_id="analysis-001",
         repo_url="https://github.com/octocat/Hello-World",
         local_clone_path=clone_path,
+        workspace_root=tmp_path,
     )
 
     metadata = extract_repo_metadata(request)
@@ -135,6 +138,7 @@ def test_extract_repo_metadata_raises_safe_error_for_invalid_clone_path(tmp_path
         analysis_id="analysis-001",
         repo_url="https://github.com/octocat/Hello-World",
         local_clone_path=clone_path,
+        workspace_root=tmp_path,
     )
 
     with pytest.raises(MetadataExtractionError) as exc_info:
@@ -142,3 +146,43 @@ def test_extract_repo_metadata_raises_safe_error_for_invalid_clone_path(tmp_path
 
     assert exc_info.value.safe_message == "Repository metadata could not be extracted from the clone workspace."
     assert str(clone_path) not in exc_info.value.safe_message
+
+
+def test_extract_repo_metadata_rejects_clone_path_outside_workspace(tmp_path: Path) -> None:
+    workspace_root = tmp_path / "workspace"
+    clone_path = tmp_path / "outside" / "repo"
+    workspace_root.mkdir()
+    clone_path.mkdir(parents=True)
+    request = MetadataExtractionRequest(
+        analysis_id="analysis-001",
+        repo_url="https://github.com/octocat/Hello-World",
+        local_clone_path=clone_path,
+        workspace_root=workspace_root,
+    )
+
+    with pytest.raises(MetadataExtractionError) as exc_info:
+        extract_repo_metadata(request)
+
+    assert exc_info.value.safe_message == "Repository metadata could not be extracted from the clone workspace."
+    assert str(clone_path) not in exc_info.value.safe_message
+
+
+def test_extract_repo_metadata_rejects_symlink_escape_from_workspace(tmp_path: Path) -> None:
+    workspace_root = tmp_path / "workspace"
+    outside_clone = tmp_path / "outside" / "repo"
+    workspace_root.mkdir()
+    outside_clone.mkdir(parents=True)
+    clone_link = workspace_root / "repo"
+    clone_link.symlink_to(outside_clone, target_is_directory=True)
+    request = MetadataExtractionRequest(
+        analysis_id="analysis-001",
+        repo_url="https://github.com/octocat/Hello-World",
+        local_clone_path=clone_link,
+        workspace_root=workspace_root,
+    )
+
+    with pytest.raises(MetadataExtractionError) as exc_info:
+        extract_repo_metadata(request)
+
+    assert exc_info.value.safe_message == "Repository metadata could not be extracted from the clone workspace."
+    assert str(outside_clone) not in exc_info.value.safe_message

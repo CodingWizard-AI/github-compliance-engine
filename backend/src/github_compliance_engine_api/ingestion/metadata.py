@@ -3,6 +3,7 @@ import tomllib
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
+from time import monotonic
 from typing import Any
 from urllib.parse import urlparse
 
@@ -83,12 +84,14 @@ class _ExtractionState:
     file_count: int = 0
     truncated: bool = False
     errors: list[AnalysisError] = field(default_factory=list)
+    deadline: float | None = None
+    timed_out: bool = False
 
 
 # @golden-thread FEAT-ING-002, FR-ING-002, CF-ANALYZE-INGEST-001, TC-ING-002, V-ING-002
 def extract_repo_metadata(request: MetadataExtractionRequest) -> RepoMetadata:
-    clone_path = _validated_clone_path(request.local_clone_path)
-    state = _ExtractionState()
+    clone_path = _validated_clone_path(request.local_clone_path, request.workspace_root)
+    state = _ExtractionState(deadline=monotonic() + request.timeout_seconds)
     ignore_spec = _ignore_spec(clone_path, state)
     readme = _extract_readme(clone_path, request, state)
     file_tree = _build_file_tree(clone_path, clone_path, request, ignore_spec, state, depth=0)
@@ -105,15 +108,20 @@ def extract_repo_metadata(request: MetadataExtractionRequest) -> RepoMetadata:
     )
 
 
-def _validated_clone_path(local_clone_path: Path) -> Path:
+def _validated_clone_path(local_clone_path: Path, workspace_root: Path) -> Path:
     try:
         clone_path = local_clone_path.resolve()
+        resolved_workspace_root = workspace_root.resolve()
         clone_path_exists = clone_path.exists()
         clone_path_is_dir = clone_path.is_dir()
     except OSError as exc:
         raise MetadataExtractionError(CLONE_PATH_UNAVAILABLE_MESSAGE) from exc
 
-    if not clone_path_exists or not clone_path_is_dir:
+    if (
+        not clone_path_exists
+        or not clone_path_is_dir
+        or not clone_path.is_relative_to(resolved_workspace_root)
+    ):
         raise MetadataExtractionError(CLONE_PATH_UNAVAILABLE_MESSAGE)
 
     return clone_path
@@ -124,6 +132,8 @@ def _extract_readme(
     request: MetadataExtractionRequest,
     state: _ExtractionState,
 ) -> ReadmeObject | None:
+    if _deadline_exceeded(state):
+        return None
     readme_path = _find_readme(clone_path)
     if readme_path is None:
         return None
@@ -210,6 +220,11 @@ def _build_file_tree(
     if node.type != "dir":
         return node
 
+    if _deadline_exceeded(state):
+        node.truncated = True
+        state.truncated = True
+        return node
+
     if depth >= request.max_tree_depth:
         if _has_children(current_path):
             node.truncated = True
@@ -217,6 +232,10 @@ def _build_file_tree(
         return node
 
     for child_path in _safe_iterdir(current_path, state):
+        if _deadline_exceeded(state):
+            node.truncated = True
+            state.truncated = True
+            break
         relative_path = _repo_relative_path(root_path, child_path)
         child_type = _node_type(child_path)
         if _is_ignored(ignore_spec, relative_path, child_type):
@@ -296,14 +315,27 @@ def _metadata_warning(code: str, message: str) -> AnalysisError:
     )
 
 
+def _deadline_exceeded(state: _ExtractionState) -> bool:
+    if state.timed_out:
+        return True
+    if state.deadline is None or monotonic() < state.deadline:
+        return False
+    state.timed_out = True
+    state.truncated = True
+    state.errors.append(_metadata_warning("METADATA_TIMEOUT", "Repository metadata extraction timed out."))
+    return True
+
+
 def _extract_language_mix(
     request: MetadataExtractionRequest,
     file_tree: FileTreeNode,
     manifests: list[ManifestDescriptor],
     state: _ExtractionState,
 ) -> list[LanguageMixEntry]:
+    if _deadline_exceeded(state):
+        return []
     entries = _github_language_mix(request, state)
-    if not entries:
+    if not entries and not state.timed_out:
         entries = _fallback_language_mix(file_tree)
     return _apply_framework_hints(entries, manifests)
 
@@ -312,6 +344,8 @@ def _github_language_mix(
     request: MetadataExtractionRequest,
     state: _ExtractionState,
 ) -> list[LanguageMixEntry]:
+    if _deadline_exceeded(state):
+        return []
     api_url = _github_languages_api_url(request.repo_url)
     if api_url is None:
         state.errors.append(_metadata_warning("GITHUB_LANGUAGES_SKIPPED", "GitHub language metadata could not be requested."))
@@ -325,7 +359,10 @@ def _github_language_mix(
         headers["Authorization"] = f"Bearer {request.github_token}"
 
     try:
-        response = httpx.get(api_url, headers=headers, timeout=request.timeout_seconds)
+        remaining_seconds = max(0.001, state.deadline - monotonic()) if state.deadline is not None else request.timeout_seconds
+        response = httpx.get(api_url, headers=headers, timeout=remaining_seconds)
+        if _deadline_exceeded(state):
+            return []
         if response.status_code != 200:
             state.errors.append(_metadata_warning("GITHUB_LANGUAGES_UNAVAILABLE", "GitHub language metadata is unavailable."))
             return []
@@ -478,6 +515,8 @@ def _extract_manifests(
 ) -> list[ManifestDescriptor]:
     manifests: list[ManifestDescriptor] = []
     for node in _file_nodes(file_tree):
+        if _deadline_exceeded(state):
+            break
         manifest_type = MANIFEST_FILENAMES.get(Path(node.path).name)
         if manifest_type is None:
             continue
@@ -508,6 +547,9 @@ def _parse_manifest(
         package_manager=_package_manager(manifest_type),
         parse_status="parsed",
     )
+
+    if _deadline_exceeded(state):
+        return base_descriptor.model_copy(update={"parse_status": "skipped"})
 
     try:
         size_bytes = manifest_path.stat().st_size

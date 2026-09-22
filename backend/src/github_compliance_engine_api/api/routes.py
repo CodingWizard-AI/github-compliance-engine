@@ -62,6 +62,7 @@ def analyze_repo(payload: AnalyzeRequest) -> AnalyzeResponse:
         analysis_id=clone_result.analysis_id,
         repo_url=clone_result.repo_url,
         local_clone_path=clone_result.local_clone_path,
+        workspace_root=settings.ingestion_workspace_root,
         timeout_seconds=settings.ingestion_metadata_timeout_seconds,
         max_tree_depth=settings.ingestion_file_tree_max_depth,
         max_file_count=settings.ingestion_file_tree_max_files,
