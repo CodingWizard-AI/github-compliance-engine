@@ -225,13 +225,6 @@ skills-lock.json
 .golden-thread-cache/
 .golden-thread-reports/
 
-# Docker and graph store data
-neo4j-data/
-graph-db/data/
-graph-db/logs/
-graph-db/import/
-graph-db/plugins/
-
 # Frontend dependencies and build outputs
 node_modules/
 .next/

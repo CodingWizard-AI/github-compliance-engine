@@ -9,9 +9,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     backend_cors_origins: str = Field(default="http://localhost:3000", alias="BACKEND_CORS_ORIGINS")
-    neo4j_uri: str = Field(default="bolt://neo4j:7687", alias="NEO4J_URI")
-    neo4j_user: str = Field(default="neo4j", alias="NEO4J_USER")
-    neo4j_password: str = Field(alias="NEO4J_PASSWORD")
     ingestion_workspace_root: Path = Field(
         default=Path("/tmp/github-compliance-engine/analyses"),
         alias="INGESTION_WORKSPACE_ROOT",

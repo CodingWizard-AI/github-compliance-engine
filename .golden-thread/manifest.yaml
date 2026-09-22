@@ -43,7 +43,3 @@ services:
     path: backend/
     manifest: backend/.golden-thread/manifest.yaml
     role: Python analysis backend
-  neo4j:
-    path: graph-db/
-    manifest: graph-db/.golden-thread/manifest.yaml
-    role: Neo4j graph store
