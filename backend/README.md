@@ -18,9 +18,6 @@ FastAPI backend for the GitHub Compliance Engine analysis service.
 BACKEND_CORS_ORIGINS=http://localhost:3000
 BACKEND_HOST=0.0.0.0
 BACKEND_PORT=8000
-NEO4J_URI=bolt://neo4j:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=local-dev-password
 INGESTION_WORKSPACE_ROOT=/tmp/github-compliance-engine/analyses
 INGESTION_CLONE_DEPTH=1
 INGESTION_CLONE_TIMEOUT_SECONDS=60
@@ -39,12 +36,17 @@ with `INGESTION_CLONE_DEPTH` and stops clone execution after
 `GIT_PYTHON_GIT_EXECUTABLE=/usr/bin/git` because GitPython requires a `git`
 binary at import time.
 
-`FEAT-ING-002` adds the metadata extraction domain contracts and runtime
-configuration for README, file tree, language mix, and framework metadata. The
-first commit exposes contract-shaped models and a placeholder service only;
-actual README walking, GitHub Languages API calls, and manifest parsing are
-implemented in later FEAT-ING-002 commits. `GITHUB_TOKEN` is optional and should
-stay empty for unauthenticated local development.
+`FEAT-ING-002` synchronously extracts a root README, bounded file tree, language
+mix, supported manifests, and framework/ruleset hints after cloning. The tree
+respects root `.gitignore` rules and fallback exclusions. Extraction time, tree
+depth, file count, and text reads are bounded by the settings above. Nonfatal
+failures are retained as safe structured warnings on the in-memory analysis.
+
+The GitHub Languages API is preferred for language byte counts. `GITHUB_TOKEN`
+is optional and should stay empty for unauthenticated local development; API
+failures fall back to deterministic file-extension detection. MongoDB Atlas is
+the planned persistence platform, but this feature adds no database driver,
+connection requirement, or durable writes.
 
 ## Local Development
 
@@ -70,8 +72,9 @@ python -m pytest
 
 `POST /api/analyze` accepts only HTTPS GitHub repository URLs shaped as
 `https://github.com/{owner}/{repo}`. A successful request performs a shallow
-clone and returns `analysis_id`, `status="accepted"`, `repo_url`, and
-`clone_status="cloned"`.
+clone and metadata extraction, stores the result in process memory, and returns
+the unchanged `analysis_id`, `status="accepted"`, `repo_url`, and
+`clone_status="cloned"` fields.
 
 Malformed URLs, non-GitHub hosts, non-HTTPS URLs, and missing owner/repo paths
 return FastAPI validation errors. Private, missing, unreachable, or timed-out

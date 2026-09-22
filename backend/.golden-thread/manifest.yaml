@@ -33,13 +33,26 @@ files:
   src/github_compliance_engine_api/api/routes.py:
     implements:
       - FEAT-ING-001
+      - FEAT-ING-002
+      - FR-ING-002
       - REST-ANALYZE-001
       - REST-RESULTS-001
       - CF-ANALYZE-INGEST-001
   tests/integration/test_analyze_route.py:
     verifies:
       - TC-ING-001
+      - TC-ING-002
       - V-ING-001
+      - V-ING-002
+  src/github_compliance_engine_api/analysis_store.py:
+    implements:
+      - FEAT-ING-002
+      - FR-ING-002
+      - CF-ANALYZE-INGEST-001
+  tests/unit/test_analysis_store.py:
+    verifies:
+      - TC-ING-002
+      - V-ING-002
   tests/contracts/test_objective_mapping_contract.py:
     verifies:
       - TC-OBJ-001
